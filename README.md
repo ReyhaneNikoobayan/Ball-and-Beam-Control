@@ -5,4 +5,5 @@ The Ball and Beam system is one of the most well-known and simplest control syst
 
 ![image](https://github.com/user-attachments/assets/edd71c73-f209-4929-9d43-9a394e3752fc)
 
+![image](https://github.com/user-attachments/assets/f9004b1a-df0d-4208-97b3-5732d5767917)
 
