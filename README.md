@@ -16,9 +16,9 @@ The control design should have these two qualities:
 2.Settling time under 8 seconds
 
 # Project Contents
-system identification : Using a simulation model and system identification methods, obtain the transfer function 
+- system identification : Using a simulation model and system identification methods, obtain the transfer function 
 
-stabilization with IMC : Using the SISO toolbox, design a PID controller that meets the above conditions and designing IMC or lead as Auxiliary controller to reach stability too
+- stabilization with IMC : Using the SISO toolbox, design a PID controller that meets the above conditions and designing IMC or lead as Auxiliary controller to reach stability too
 
 PID Tuner : Using the PID-Tuner tool, design a controller that meets the above conditions
 
