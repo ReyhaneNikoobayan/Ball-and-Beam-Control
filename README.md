@@ -11,6 +11,6 @@ The Ball and Beam system is one of the most well-known and simplest control syst
 
 The control design should have these two qualities:
 
-Overshoot percentage less than 20%
-
+1.Overshoot percentage less than 20%
+2.
 Settling time under 8 seconds
