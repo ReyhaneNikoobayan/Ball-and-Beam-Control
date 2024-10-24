@@ -18,13 +18,8 @@ The control design should have these two qualities:
 # Project Contents
 - system identification : Using a simulation model and system identification methods, obtain the transfer function 
 - stabilization with IMC : Using the SISO toolbox, design a PID controller that meets the above conditions and designing IMC or lead as Auxiliary controller to reach stability too
-
-PID Tuner : Using the PID-Tuner tool, design a controller that meets the above conditions
-
-PID methods : Designing PID with method such as ZN, R-ZN, A-H, ..
-
-Optim PID : Using the optim PID tool, design a PID controller that meets the above conditions
-
-2DOF PID : Designing a PID controller with two degrees of freedom to achieve the desired outcomes
-
-Robust disturbance rejection control : designing a controller that is robust against  input disturbance of 30Hz with the amplitude of 7 or more.
+- PID Tuner : Using the PID-Tuner tool, design a controller that meets the above conditions
+- PID methods : Designing PID with method such as ZN, R-ZN, A-H, ..
+- Optim PID : Using the optim PID tool, design a PID controller that meets the above conditions
+- 2DOF PID : Designing a PID controller with two degrees of freedom to achieve the desired outcomes
+- Robust disturbance rejection control : designing a controller that is robust against  input disturbance of 30Hz with the amplitude of 7 or more.
