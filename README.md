@@ -22,4 +22,6 @@ The control design should have these two qualities:
 - PID methods : Designing PID with method such as ZN, R-ZN, A-H, ..
 - Optim PID : Using the optim PID tool, design a PID controller that meets the above conditions
 - 2DOF PID : Designing a PID controller with two degrees of freedom to achieve the desired outcomes
-- Robust disturbance rejection control : designing a controller that is robust against  input disturbance of 30Hz with the amplitude of 7 or more.
+- Robust disturbance rejection control : designing a controller that is robust against  input disturbance of 30Hz with the amplitude of 7 or more
+- project description&report : Description of project and report
+- modelBB15 : The simulated file of this system is available with the title modIBB15, through which the relationship between the motor's angle (θ) and the ball's position on beam (r) can be extracted
