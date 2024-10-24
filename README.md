@@ -1,1 +1,1 @@
-# Ball and Beam Project
+# Ball and Beam control
