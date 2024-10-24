@@ -1,0 +1,696 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>q5_code</title><meta name="generator" content="MATLAB 9.10"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2024-01-31"><meta name="DC.source" content="q5_code.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="comment">% controller design project Q5</span>
+
+clear
+clc
+close <span class="string">all</span>
+
+run(<span class="string">'code.m'</span>);
+
+s = tf(<span class="string">'s'</span>);
+Gest = 1/((s+1)^4);
+
+<span class="comment">% FOPDT model estimation</span>
+[K0,L0,T0] = get_fod(Gest,0);
+G_freq = exp(-L0*s)*K0/(T0*s+1);
+
+[K1,L1,T1] = get_fod(Gest,1);
+G_step = exp(-L1*s)*K1/(T1*s+1);
+
+G_opt = opt_app(Gest,0,1,1);
+
+figure(1)
+step(Gest,G_freq,G_step,G_opt);
+legend <span class="string">show</span>
+
+<span class="comment">% G_step is chosen</span>
+[Kc,pp,wc,wp] = margin(Gest);
+Tc = 2*pi/wc;
+N = 10;
+
+<span class="comment">% ZN for PI PID PI-D for tf response</span>
+figure(2); hold <span class="string">on</span>; title(<span class="string">'ZN tf'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(2,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(3,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(4,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+legend(<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">'PI'</span>,<span class="string">'PID'</span>,<span class="string">'PI-D'</span>)
+
+
+<span class="comment">% ZN for PI PID PI-D for freq response</span>
+figure(3); hold <span class="string">on</span>; title(<span class="string">'ZN freq'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(2,[Kc,Tc,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(3,[Kc,Tc,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(4,[Kc,Tc,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+legend(<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">'PI'</span>,<span class="string">'PID'</span>,<span class="string">'PI-D'</span>)
+
+
+<span class="comment">% refined ZN</span>
+figure(4); hold <span class="string">on</span>; title(<span class="string">'refined ZN'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,H,Kp,Ti,Td,beta]=rziegler_nic([K1,L1,T1,N,Kc,Tc]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+
+<span class="comment">% CHR PI PID PI-D for set point and no overshoots</span>
+figure(5); hold <span class="string">on</span>; title(<span class="string">'CHR sp os=0'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,H,Kp,Ti,Td]=chr_pid(2,1,[K1,L1,T1,N,0]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=chr_pid(3,1,[K1,L1,T1,N,0]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+<span class="comment">% [Gc,H,Kp,Ti,Td]=chr_pid(4,1,[K1,L1,T1,N,0]);</span>
+<span class="comment">% out = sim('q5.slx');</span>
+<span class="comment">% plot(out.simout.time,out.simout.data)</span>
+
+legend(<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">'PI'</span>,<span class="string">'PID'</span>)
+
+
+<span class="comment">% CHR PI PID PI-D for set point and 20% overshoots</span>
+figure(6); hold <span class="string">on</span>; title(<span class="string">'CHR sp os=20%'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,H,Kp,Ti,Td]=chr_pid(2,1,[K1,L1,T1,N,1]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=chr_pid(3,1,[K1,L1,T1,N,1]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+<span class="comment">% [Gc,H,Kp,Ti,Td]=chr_pid(4,1,[K1,L1,T1,N,1]);</span>
+<span class="comment">% out = sim('q5.slx');</span>
+<span class="comment">% plot(out.simout.time,out.simout.data)</span>
+
+legend(<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">'PI'</span>,<span class="string">'PID'</span>)
+
+
+<span class="comment">% wjc</span>
+figure(7); hold <span class="string">on</span>; title(<span class="string">'wjc'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,Kp,Ti,Td]=wjcpid([K1,L1,T1,N]); H=1;
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+
+<span class="comment">% CC PI PID PI-D</span>
+figure(8); hold <span class="string">on</span>; title(<span class="string">'CC'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(2,1,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(3,1,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(4,1,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+legend(<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">'PI'</span>,<span class="string">'PID'</span>,<span class="string">'PI-D'</span>)
+
+
+<span class="comment">% CC revisited PI PID PI-D</span>
+figure(9); hold <span class="string">on</span>; title(<span class="string">'CC revisited'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(2,2,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(3,2,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(4,2,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+legend(<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">'PI'</span>,<span class="string">'PID'</span>,<span class="string">'PI-D'</span>)
+
+
+<span class="comment">% AH PI PID for both tf and freq responses</span>
+figure(10); hold <span class="string">on</span>; title(<span class="string">'AH'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,H,Kp,Ti,Td]=astrom_hagglund(1,1,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=astrom_hagglund(2,1,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=astrom_hagglund(1,2,[K1,Kc,Tc,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=astrom_hagglund(2,2,[K1,Kc,Tc,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+legend(<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">'PI tf'</span>,<span class="string">'PID tf'</span>,<span class="string">'PI freq'</span>,<span class="string">'PID freq'</span>)
+
+
+<span class="comment">% Opt-pid PI PID PI-D for tf response and sp</span>
+figure(11); hold <span class="string">on</span>; title(<span class="string">'opt-pid sp tf'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,Kp,Ti,Td,H] = Optimum(2,1,[K1,L1,T1,N,1]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(3,1,[K1,L1,T1,N,1]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(4,1,[K1,L1,T1,N,1]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(2,1,[K1,L1,T1,N,2]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(3,1,[K1,L1,T1,N,2]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(4,1,[K1,L1,T1,N,2]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(2,1,[K1,L1,T1,N,3]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(3,1,[K1,L1,T1,N,3]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(4,1,[K1,L1,T1,N,3]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+legend(<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">'PI ISE'</span>,<span class="string">'PID ISE'</span>,<span class="string">'PI-D ISE'</span>,<span class="string">'PI ISTE'</span>,<span class="string">'PID ISTE'</span>,<span class="keyword">...</span>
+    <span class="string">'PI-D ISTE'</span>,<span class="string">'PI IST2E'</span>,<span class="string">'PID IST2E'</span>,<span class="string">'PI-D IST2E'</span>)
+
+
+<span class="comment">% Opt-pid PI PID PI-D for freq response and sp</span>
+figure(12); hold <span class="string">on</span>; title(<span class="string">'opt-pid sp freq'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,Kp,Ti,Td,H] = Optimum(2,1,[K1,L1,T1,N,Kc,Tc,K1*Kc]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(3,1,[K1,L1,T1,N,Kc,Tc,K1*Kc]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(4,1,[K1,L1,T1,N,Kc,Tc,K1*Kc]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+legend(<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">'PI'</span>,<span class="string">'PID'</span>,<span class="string">'PI-D'</span>)
+
+
+<span class="comment">% comparing results</span>
+figure(13); hold <span class="string">on</span>; title(<span class="string">'final compare'</span>)
+plot(0:1:50,ones(51,1)*0.5,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.525,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.475,<span class="string">'k-.'</span>)
+plot(0:1:50,ones(51,1)*0.6,<span class="string">'k-.'</span>)
+
+[Gc,H,Kp,Ti,Td]=chr_pid(3,1,[K1,L1,T1,N,1]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td]=wjcpid([K1,L1,T1,N]); H=1;
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=astrom_hagglund(2,1,[K1,L1,T1,N]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(3,1,[K1,L1,T1,N,2]);
+out = sim(<span class="string">'q5.slx'</span>);
+plot(out.simout.time,out.simout.data)
+
+legend(<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">''</span>,<span class="string">'CHR PID sp os=20%'</span>,<span class="string">'wjc'</span>,<span class="string">'AH PID tf'</span>,<span class="keyword">...</span>
+    <span class="string">'Optpid PID ISTE sp tf '</span>)
+
+
+<span class="comment">% best controller is wjc PID</span>
+[Gc,Kp,Ti,Td]=wjcpid([K1,L1,T1,N]); H=1;
+out = sim(<span class="string">'q5.slx'</span>);
+</pre><img vspace="5" hspace="5" src="q5_code_01.png" alt=""> <img vspace="5" hspace="5" src="q5_code_02.png" alt=""> <img vspace="5" hspace="5" src="q5_code_03.png" alt=""> <img vspace="5" hspace="5" src="q5_code_04.png" alt=""> <img vspace="5" hspace="5" src="q5_code_05.png" alt=""> <img vspace="5" hspace="5" src="q5_code_06.png" alt=""> <img vspace="5" hspace="5" src="q5_code_07.png" alt=""> <img vspace="5" hspace="5" src="q5_code_08.png" alt=""> <img vspace="5" hspace="5" src="q5_code_09.png" alt=""> <img vspace="5" hspace="5" src="q5_code_10.png" alt=""> <img vspace="5" hspace="5" src="q5_code_11.png" alt=""> <img vspace="5" hspace="5" src="q5_code_12.png" alt=""> <img vspace="5" hspace="5" src="q5_code_13.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+
+% controller design project Q5
+
+clear
+clc
+close all
+
+run('code.m');
+
+s = tf('s');
+Gest = 1/((s+1)^4);
+
+% FOPDT model estimation
+[K0,L0,T0] = get_fod(Gest,0);
+G_freq = exp(-L0*s)*K0/(T0*s+1);
+
+[K1,L1,T1] = get_fod(Gest,1);
+G_step = exp(-L1*s)*K1/(T1*s+1);
+
+G_opt = opt_app(Gest,0,1,1);
+
+figure(1)
+step(Gest,G_freq,G_step,G_opt);
+legend show
+
+% G_step is chosen
+[Kc,pp,wc,wp] = margin(Gest);
+Tc = 2*pi/wc;
+N = 10;
+
+% ZN for PI PID PI-D for tf response
+figure(2); hold on; title('ZN tf')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(2,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(3,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(4,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+legend('','','','','PI','PID','PI-D')
+
+
+% ZN for PI PID PI-D for freq response
+figure(3); hold on; title('ZN freq')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(2,[Kc,Tc,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(3,[Kc,Tc,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=ziegler_nic(4,[Kc,Tc,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+legend('','','','','PI','PID','PI-D')
+
+
+% refined ZN
+figure(4); hold on; title('refined ZN')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,H,Kp,Ti,Td,beta]=rziegler_nic([K1,L1,T1,N,Kc,Tc]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+
+% CHR PI PID PI-D for set point and no overshoots
+figure(5); hold on; title('CHR sp os=0')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,H,Kp,Ti,Td]=chr_pid(2,1,[K1,L1,T1,N,0]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=chr_pid(3,1,[K1,L1,T1,N,0]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+% [Gc,H,Kp,Ti,Td]=chr_pid(4,1,[K1,L1,T1,N,0]);
+% out = sim('q5.slx');
+% plot(out.simout.time,out.simout.data)
+
+legend('','','','','PI','PID')
+
+
+% CHR PI PID PI-D for set point and 20% overshoots
+figure(6); hold on; title('CHR sp os=20%')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,H,Kp,Ti,Td]=chr_pid(2,1,[K1,L1,T1,N,1]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=chr_pid(3,1,[K1,L1,T1,N,1]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+% [Gc,H,Kp,Ti,Td]=chr_pid(4,1,[K1,L1,T1,N,1]);
+% out = sim('q5.slx');
+% plot(out.simout.time,out.simout.data)
+
+legend('','','','','PI','PID')
+
+
+% wjc
+figure(7); hold on; title('wjc')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,Kp,Ti,Td]=wjcpid([K1,L1,T1,N]); H=1;
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+
+% CC PI PID PI-D 
+figure(8); hold on; title('CC')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(2,1,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(3,1,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(4,1,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+legend('','','','','PI','PID','PI-D')
+
+
+% CC revisited PI PID PI-D 
+figure(9); hold on; title('CC revisited')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(2,2,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(3,2,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=cohen_pid(4,2,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+legend('','','','','PI','PID','PI-D')
+
+
+% AH PI PID for both tf and freq responses
+figure(10); hold on; title('AH')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,H,Kp,Ti,Td]=astrom_hagglund(1,1,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=astrom_hagglund(2,1,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=astrom_hagglund(1,2,[K1,Kc,Tc,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=astrom_hagglund(2,2,[K1,Kc,Tc,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+legend('','','','','PI tf','PID tf','PI freq','PID freq')
+
+
+% Opt-pid PI PID PI-D for tf response and sp
+figure(11); hold on; title('opt-pid sp tf')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,Kp,Ti,Td,H] = Optimum(2,1,[K1,L1,T1,N,1]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(3,1,[K1,L1,T1,N,1]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(4,1,[K1,L1,T1,N,1]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(2,1,[K1,L1,T1,N,2]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(3,1,[K1,L1,T1,N,2]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(4,1,[K1,L1,T1,N,2]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(2,1,[K1,L1,T1,N,3]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(3,1,[K1,L1,T1,N,3]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(4,1,[K1,L1,T1,N,3]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+legend('','','','','PI ISE','PID ISE','PI-D ISE','PI ISTE','PID ISTE',...
+    'PI-D ISTE','PI IST2E','PID IST2E','PI-D IST2E')
+
+
+% Opt-pid PI PID PI-D for freq response and sp
+figure(12); hold on; title('opt-pid sp freq')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,Kp,Ti,Td,H] = Optimum(2,1,[K1,L1,T1,N,Kc,Tc,K1*Kc]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(3,1,[K1,L1,T1,N,Kc,Tc,K1*Kc]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(4,1,[K1,L1,T1,N,Kc,Tc,K1*Kc]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+legend('','','','','PI','PID','PI-D')
+
+
+% comparing results
+figure(13); hold on; title('final compare')
+plot(0:1:50,ones(51,1)*0.5,'k-.')
+plot(0:1:50,ones(51,1)*0.525,'k-.')
+plot(0:1:50,ones(51,1)*0.475,'k-.')
+plot(0:1:50,ones(51,1)*0.6,'k-.')
+
+[Gc,H,Kp,Ti,Td]=chr_pid(3,1,[K1,L1,T1,N,1]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td]=wjcpid([K1,L1,T1,N]); H=1;
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,H,Kp,Ti,Td]=astrom_hagglund(2,1,[K1,L1,T1,N]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+[Gc,Kp,Ti,Td,H] = Optimum(3,1,[K1,L1,T1,N,2]);
+out = sim('q5.slx');
+plot(out.simout.time,out.simout.data)
+
+legend('','','','','CHR PID sp os=20%','wjc','AH PID tf',...
+    'Optpid PID ISTE sp tf ')
+
+
+% best controller is wjc PID
+[Gc,Kp,Ti,Td]=wjcpid([K1,L1,T1,N]); H=1;
+out = sim('q5.slx');
+
+
+##### SOURCE END #####
+--></body></html>
