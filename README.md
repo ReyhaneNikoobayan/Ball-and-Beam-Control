@@ -17,7 +17,6 @@ The control design should have these two qualities:
 
 # Project Contents
 - system identification : Using a simulation model and system identification methods, obtain the transfer function 
-
 - stabilization with IMC : Using the SISO toolbox, design a PID controller that meets the above conditions and designing IMC or lead as Auxiliary controller to reach stability too
 
 PID Tuner : Using the PID-Tuner tool, design a controller that meets the above conditions
